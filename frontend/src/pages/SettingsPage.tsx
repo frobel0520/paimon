@@ -3,6 +3,7 @@ import { api, Modules } from "../api";
 
 const LABELS: Record<keyof Modules, string> = {
   diet: "飲食",
+  places: "常去店家",
   games: "遊戲",
   notes: "日常記事",
   work: "工作",

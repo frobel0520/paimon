@@ -286,6 +286,96 @@ textarea {
   transform: scale(0.99);
 }
 
+.pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pill.open {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+}
+
+.pill.closed {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--danger);
+}
+
+.pill.warn {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.pill.unknown {
+  background: var(--surface2);
+  color: var(--muted);
+}
+
+.place-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--surface2);
+}
+
+.place-item:last-child {
+  border-bottom: none;
+}
+
+.place-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.place-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.place-name {
+  font-weight: 600;
+}
+
+.place-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.place-meta {
+  margin-top: 0.25rem;
+}
+
+.hours-details {
+  margin-top: 0.25rem;
+}
+
+.hours-details summary {
+  cursor: pointer;
+}
+
+.hours-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+}
+
 .nav-back {
   display: inline-flex;
   align-items: center;

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
-MODULE_KEYS = ("diet", "games", "notes", "work")
+MODULE_KEYS = ("diet", "places", "games", "notes", "work")
 SPRINT2_MODULES = ("games", "work")
 
 
@@ -20,6 +20,7 @@ class User(Base):
     notes: Mapped[list["Note"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     wheel_options: Mapped[list["WheelOption"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     meal_entries: Mapped[list["MealEntry"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    favorite_places: Mapped[list["FavoritePlace"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class UserModule(Base):
@@ -58,6 +59,27 @@ class WheelOption(Base):
     label: Mapped[str] = mapped_column(String(120))
 
     user: Mapped["User"] = relationship(back_populates="wheel_options")
+
+
+class FavoritePlace(Base):
+    """常去的飲食店家，快取 Google Places 的營業時間等資料。"""
+
+    __tablename__ = "favorite_places"
+    __table_args__ = (UniqueConstraint("user_id", "place_id", name="uq_user_place"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    place_id: Mapped[str] = mapped_column(String(255))  # Google Place ID
+    name: Mapped[str] = mapped_column(String(255))
+    address: Mapped[str] = mapped_column(String(500), default="")
+    maps_url: Mapped[str] = mapped_column(String(500), default="")
+    business_status: Mapped[str] = mapped_column(String(40), default="")
+    opening_hours_json: Mapped[str] = mapped_column(Text, default="")  # regularOpeningHours 原始 JSON
+    utc_offset_minutes: Mapped[int | None] = mapped_column(nullable=True)
+    last_refreshed: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship(back_populates="favorite_places")
 
 
 class MealEntry(Base):

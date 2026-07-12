@@ -1,9 +1,11 @@
-import type { Meal, Modules, Note, User, WheelOption } from "./api";
+import type { FavoritePlace, Meal, Modules, Note, User, WheelOption } from "./api";
+import type { PlaceDetails } from "./googleClient";
 
 const DB_KEY = "paimon_db_v1";
 
 const DEFAULT_MODULES: Modules = {
   diet: true,
+  places: true,
   games: false,
   notes: true,
   work: false,
@@ -18,10 +20,26 @@ type DbShape = {
   notes: Note[];
   wheelOptions: Array<WheelOption & { user_id: number; wheel_type: "food" | "drink" }>;
   meals: Array<Meal & { user_id: number }>;
+  places: Array<FavoritePlace & { user_id: number }>;
   nextUserId: number;
   nextNoteId: number;
   nextWheelId: number;
   nextMealId: number;
+  nextPlaceId: number;
+};
+
+const EMPTY_DB: DbShape = {
+  users: [],
+  modules: {},
+  notes: [],
+  wheelOptions: [],
+  meals: [],
+  places: [],
+  nextUserId: 1,
+  nextNoteId: 1,
+  nextWheelId: 1,
+  nextMealId: 1,
+  nextPlaceId: 1,
 };
 
 function nowIso(): string {
@@ -30,20 +48,9 @@ function nowIso(): string {
 
 function loadDb(): DbShape {
   const raw = localStorage.getItem(DB_KEY);
-  if (!raw) {
-    return {
-      users: [],
-      modules: {},
-      notes: [],
-      wheelOptions: [],
-      meals: [],
-      nextUserId: 1,
-      nextNoteId: 1,
-      nextWheelId: 1,
-      nextMealId: 1,
-    };
-  }
-  return JSON.parse(raw) as DbShape;
+  if (!raw) return { ...EMPTY_DB };
+  // 舊資料可能缺少後來新增的欄位（如 places），以預設值補齊
+  return { ...EMPTY_DB, ...(JSON.parse(raw) as Partial<DbShape>) };
 }
 
 function saveDb(db: DbShape): void {
@@ -51,9 +58,8 @@ function saveDb(db: DbShape): void {
 }
 
 function ensureModules(db: DbShape, userId: number): Modules {
-  if (!db.modules[userId]) {
-    db.modules[userId] = { ...DEFAULT_MODULES };
-  }
+  // 與預設值合併，讓舊資料自動補上新模組 key
+  db.modules[userId] = { ...DEFAULT_MODULES, ...db.modules[userId] };
   return db.modules[userId];
 }
 
@@ -248,6 +254,60 @@ export const localDb = {
     const idx = db.meals.findIndex((m) => m.id === mealId && m.user_id === userId);
     if (idx < 0) throw new Error("Meal not found");
     db.meals.splice(idx, 1);
+    saveDb(db);
+  },
+
+  listPlaces(userId: number): FavoritePlace[] {
+    const db = loadDb();
+    return db.places
+      .filter((p) => p.user_id === userId)
+      .map(({ user_id: _, ...p }) => p)
+      .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+  },
+
+  getPlace(userId: number, favId: number): FavoritePlace {
+    const db = loadDb();
+    const place = db.places.find((p) => p.id === favId && p.user_id === userId);
+    if (!place) throw new Error("Place not found");
+    const { user_id: _, ...out } = place;
+    return out;
+  },
+
+  addPlace(userId: number, placeId: string, details: PlaceDetails): FavoritePlace {
+    const db = loadDb();
+    if (db.places.some((p) => p.user_id === userId && p.place_id === placeId)) {
+      throw new Error("此店家已在清單中");
+    }
+    const t = nowIso();
+    const place: FavoritePlace & { user_id: number } = {
+      id: db.nextPlaceId++,
+      user_id: userId,
+      place_id: placeId,
+      ...details,
+      last_refreshed: t,
+      created_at: t,
+    };
+    db.places.push(place);
+    saveDb(db);
+    const { user_id: _, ...out } = place;
+    return out;
+  },
+
+  updatePlace(userId: number, favId: number, details: PlaceDetails): FavoritePlace {
+    const db = loadDb();
+    const place = db.places.find((p) => p.id === favId && p.user_id === userId);
+    if (!place) throw new Error("Place not found");
+    Object.assign(place, details, { last_refreshed: nowIso() });
+    saveDb(db);
+    const { user_id: _, ...out } = place;
+    return out;
+  },
+
+  deletePlace(userId: number, favId: number): void {
+    const db = loadDb();
+    const idx = db.places.findIndex((p) => p.id === favId && p.user_id === userId);
+    if (idx < 0) throw new Error("Place not found");
+    db.places.splice(idx, 1);
     saveDb(db);
   },
 };

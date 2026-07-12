@@ -4,6 +4,7 @@ import { api, Modules, useLocalStorage, User } from "./api";
 import { useUser } from "./context/UserContext";
 import DietPage from "./pages/DietPage";
 import NotesPage from "./pages/NotesPage";
+import PlacesPage from "./pages/PlacesPage";
 import SettingsPage from "./pages/SettingsPage";
 
 function ProfileSelect() {
@@ -148,6 +149,7 @@ function Dashboard() {
   const items: ModuleItem[] = [
     { key: "notes", title: "日常記事", path: "/notes", enabled: modules?.notes },
     { key: "diet", title: "飲食", path: "/diet", enabled: modules?.diet },
+    { key: "places", title: "常去店家", path: "/places", enabled: modules?.places },
     {
       key: "games",
       title: "遊戲",
@@ -279,6 +281,20 @@ export default function App() {
               <div className="app-shell">
                 <Layout>
                   <DietPage userId={uid} />
+                </Layout>
+              </div>
+            )}
+          </RequireUser>
+        }
+      />
+      <Route
+        path="/places"
+        element={
+          <RequireUser>
+            {(uid) => (
+              <div className="app-shell">
+                <Layout>
+                  <PlacesPage userId={uid} />
                 </Layout>
               </div>
             )}

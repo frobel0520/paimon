@@ -1,6 +1,6 @@
 # Paimon
 
-內部使用的模組化日常助理 Web（Sprint 1：個人檔案、模組開關、記事、飲食輪盤與飲食紀錄）。
+內部使用的模組化日常助理 Web（個人檔案、模組開關、記事、飲食輪盤與飲食紀錄、常去店家營業狀態）。
 
 ## 需求
 
@@ -42,8 +42,34 @@ npm run dev
 - `GET/PATCH /api/users/{id}/modules` — 模組開關  
 - `GET/POST/PATCH/DELETE /api/users/{id}/notes` — 記事  
 - `GET/POST/DELETE /api/users/{id}/diet/...` — 輪盤與飲食紀錄  
+- `GET/POST/DELETE /api/users/{id}/places` — 常去店家收藏  
+- `GET /api/users/{id}/places/search?q=` — 以店名搜尋 Google 店家  
+- `POST /api/users/{id}/places/{fav_id}/refresh` — 重新抓取店家資料  
 
 資料庫：`backend/paimon.db`（SQLite，自動建立）
+
+## 常去店家（Google Places）
+
+收藏常去的飲食店家，隨時查看「現在有沒有開」。
+
+- 資料來源：Google Places API (New)。Text Search 搜店（Pro SKU，每月免費 5,000 次）、
+  Place Details 抓營業時間（Enterprise SKU，每月免費 1,000 次）。
+- 營業時段快取在 DB，「現在是否營業」由前端以快取時段即時計算，
+  只有新增店家、按「更新」、或快取超過 `PLACES_REFRESH_DAYS`（預設 7 天）才呼叫 Google，
+  正常使用遠低於免費額度。
+
+### 設定 API key（本機後端模式）
+
+1. 在 Google Cloud 建立 API key（啟用 **Places API (New)**）
+2. 複製 `backend/.env.example` 為 `backend/.env`，貼上 key（`.env` 已被 gitignore）
+3. 重新啟動後端
+
+### GitHub Pages（localStorage）模式
+
+沒有後端可代打 Google，改由瀏覽器直連 Places API：
+第一次進「常去店家」頁時貼上 API key，只會存在該瀏覽器的 localStorage。
+此模式 key 會暴露於瀏覽器，請務必在 Google Cloud 對 key 設定
+「網站限制（HTTP referrer）」與「僅限 Places API (New)」。
 
 ## Sprint 1 驗收對照
 

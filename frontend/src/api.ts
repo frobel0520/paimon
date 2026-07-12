@@ -1,7 +1,19 @@
+import {
+  fetchPlaceDetailsDirect,
+  getGoogleApiKey,
+  searchPlacesDirect,
+} from "./googleClient";
 import { localDb } from "./localDb";
+import type { OpeningHours } from "./openStatus";
 
 export type User = { id: number; name: string; created_at: string };
-export type Modules = { diet: boolean; games: boolean; notes: boolean; work: boolean };
+export type Modules = {
+  diet: boolean;
+  places: boolean;
+  games: boolean;
+  notes: boolean;
+  work: boolean;
+};
 export type Note = {
   id: number;
   title: string;
@@ -13,6 +25,24 @@ export type Note = {
 };
 export type WheelOption = { id: number; label: string };
 export type Meal = { id: number; text: string; eaten_at: string; user_id?: number };
+export type FavoritePlace = {
+  id: number;
+  place_id: string;
+  name: string;
+  address: string;
+  maps_url: string;
+  business_status: string;
+  opening_hours: OpeningHours | null;
+  utc_offset_minutes: number | null;
+  last_refreshed: string;
+  created_at: string;
+};
+export type PlaceCandidate = { place_id: string; name: string; address: string };
+export type PlacesList = {
+  google_configured: boolean;
+  refresh_days: number;
+  places: FavoritePlace[];
+};
 
 /** GitHub Pages 使用 local；本機開發預設連後端 API */
 export const useLocalStorage =
@@ -78,6 +108,18 @@ const remoteApi = {
     }),
   deleteMeal: (userId: number, mealId: number) =>
     request<void>(`/api/users/${userId}/diet/meals/${mealId}`, { method: "DELETE" }),
+  listPlaces: (userId: number) => request<PlacesList>(`/api/users/${userId}/places`),
+  searchPlaces: (userId: number, q: string) =>
+    request<PlaceCandidate[]>(`/api/users/${userId}/places/search?q=${encodeURIComponent(q)}`),
+  addPlace: (userId: number, placeId: string) =>
+    request<FavoritePlace>(`/api/users/${userId}/places`, {
+      method: "POST",
+      body: JSON.stringify({ place_id: placeId }),
+    }),
+  refreshPlace: (userId: number, favId: number) =>
+    request<FavoritePlace>(`/api/users/${userId}/places/${favId}/refresh`, { method: "POST" }),
+  deletePlace: (userId: number, favId: number) =>
+    request<void>(`/api/users/${userId}/places/${favId}`, { method: "DELETE" }),
 };
 
 const localApi = {
@@ -107,6 +149,24 @@ const localApi = {
   addMeal: async (userId: number, text: string) => localDb.addMeal(userId, text),
   deleteMeal: async (userId: number, mealId: number) => {
     localDb.deleteMeal(userId, mealId);
+  },
+  listPlaces: async (userId: number): Promise<PlacesList> => ({
+    google_configured: !!getGoogleApiKey(),
+    refresh_days: 7,
+    places: localDb.listPlaces(userId),
+  }),
+  searchPlaces: async (_userId: number, q: string) => searchPlacesDirect(q),
+  addPlace: async (userId: number, placeId: string) => {
+    const details = await fetchPlaceDetailsDirect(placeId);
+    return localDb.addPlace(userId, placeId, details);
+  },
+  refreshPlace: async (userId: number, favId: number) => {
+    const place = localDb.getPlace(userId, favId);
+    const details = await fetchPlaceDetailsDirect(place.place_id);
+    return localDb.updatePlace(userId, favId, details);
+  },
+  deletePlace: async (userId: number, favId: number) => {
+    localDb.deletePlace(userId, favId);
   },
 };
 

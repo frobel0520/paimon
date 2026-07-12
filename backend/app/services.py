@@ -14,6 +14,7 @@ from app.models import MODULE_KEYS, SPRINT2_MODULES, MealEntry, Note, User, User
 
 DEFAULT_MODULES = {
     "diet": True,
+    "places": True,
     "games": False,
     "notes": True,
     "work": False,

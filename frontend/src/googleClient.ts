@@ -49,6 +49,9 @@ async function call<T>(method: string, url: string, fieldMask: string, body?: un
       "X-Goog-FieldMask": fieldMask,
     },
     body: body ? JSON.stringify(body) : undefined,
+    // 預設政策跨網域只送出網域根目錄，會對不上 Google key 的
+    // 「網站限制」路徑比對；改送完整網址（HTTPS→HTTPS 不降級）
+    referrerPolicy: "no-referrer-when-downgrade",
   });
   if (!res.ok) {
     const err = await res.json().catch(() => null);

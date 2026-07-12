@@ -217,6 +217,14 @@ input[type="text"] {
   padding-left: 1.1rem;
 }
 
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .link-btn {
   background: none;
   border: none;

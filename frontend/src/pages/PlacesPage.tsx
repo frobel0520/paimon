@@ -121,6 +121,7 @@ export default function PlacesPage() {
   const [addingId, setAddingId] = useState("");
   const [refreshingIds, setRefreshingIds] = useState<Set<number>>(new Set());
   const [now, setNow] = useState(() => new Date());
+  const [page, setPage] = useState(1);
   const autoRefreshed = useRef(false);
 
   // 每分鐘重算一次營業狀態
@@ -221,6 +222,11 @@ export default function PlacesPage() {
 
   const needKey = !data.google_configured;
 
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(data.places.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages); // 刪到頁數變少時自動夾回
+  const pagePlaces = data.places.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <>
       {needKey && useLocalStorage && <ApiKeyCard onSaved={load} />}
@@ -270,9 +276,12 @@ export default function PlacesPage() {
         ))}
       </div>
       <div className="card">
-        <h2>常去店家</h2>
+        <h2>
+          常去店家
+          {data.places.length > 0 && <span className="sub"> （共 {data.places.length} 家）</span>}
+        </h2>
         {data.places.length === 0 && <p className="sub">尚未收藏任何店家，先在上方搜尋加入吧</p>}
-        {data.places.map((p) => (
+        {pagePlaces.map((p) => (
           <PlaceRow
             key={p.id}
             place={p}
@@ -282,6 +291,29 @@ export default function PlacesPage() {
             onDelete={() => remove(p)}
           />
         ))}
+        {totalPages > 1 && (
+          <div className="pager">
+            <button
+              type="button"
+              className="btn secondary"
+              disabled={currentPage <= 1}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              ← 上一頁
+            </button>
+            <span className="sub">
+              第 {currentPage} / {totalPages} 頁
+            </span>
+            <button
+              type="button"
+              className="btn secondary"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              下一頁 →
+            </button>
+          </div>
+        )}
         {useLocalStorage && data.google_configured && (
           <p className="sub">
             <button

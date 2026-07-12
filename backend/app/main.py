@@ -1,16 +1,15 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 
-from app.database import Base, engine
-from app.routers import diet, notes, places, users
+from app.database import init_db
+from app.routers import places
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
 
-Base.metadata.create_all(bind=engine)
+init_db()
 
-for module in (users, notes, diet, places):
-    app.register_blueprint(module.bp)
+app.register_blueprint(places.bp)
 
 
 @app.get("/api/health")

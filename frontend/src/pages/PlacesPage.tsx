@@ -112,7 +112,7 @@ function ApiKeyCard({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-export default function PlacesPage({ userId }: { userId: number }) {
+export default function PlacesPage() {
   const [data, setData] = useState<PlacesList | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -131,10 +131,10 @@ export default function PlacesPage({ userId }: { userId: number }) {
 
   const load = useCallback(() => {
     api
-      .listPlaces(userId)
+      .listPlaces()
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : "載入失敗"));
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -150,7 +150,7 @@ export default function PlacesPage({ userId }: { userId: number }) {
     async (place: FavoritePlace, silent = false) => {
       setRefreshingIds((s) => new Set(s).add(place.id));
       try {
-        const updated = await api.refreshPlace(userId, place.id);
+        const updated = await api.refreshPlace(place.id);
         updateRow(updated);
       } catch (e) {
         if (!silent) setError(e instanceof Error ? e.message : "更新失敗");
@@ -162,7 +162,7 @@ export default function PlacesPage({ userId }: { userId: number }) {
         });
       }
     },
-    [userId]
+    []
   );
 
   // 進頁面時背景更新過期資料（逐一進行，控制 API 用量）
@@ -182,7 +182,7 @@ export default function PlacesPage({ userId }: { userId: number }) {
     setSearching(true);
     setCandidates(null);
     try {
-      setCandidates(await api.searchPlaces(userId, query.trim()));
+      setCandidates(await api.searchPlaces(query.trim()));
     } catch (e) {
       setError(e instanceof Error ? e.message : "搜尋失敗");
     } finally {
@@ -194,7 +194,7 @@ export default function PlacesPage({ userId }: { userId: number }) {
     setError("");
     setAddingId(candidate.place_id);
     try {
-      await api.addPlace(userId, candidate.place_id);
+      await api.addPlace(candidate.place_id);
       setCandidates(null);
       setQuery("");
       load();
@@ -208,7 +208,7 @@ export default function PlacesPage({ userId }: { userId: number }) {
   const remove = async (place: FavoritePlace) => {
     setError("");
     try {
-      await api.deletePlace(userId, place.id);
+      await api.deletePlace(place.id);
       setData((d) => (d ? { ...d, places: d.places.filter((p) => p.id !== place.id) } : d));
     } catch (e) {
       setError(e instanceof Error ? e.message : "刪除失敗");

@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 backend/paimon.db
+backend/paimon.db.bak
 node_modules/
 frontend/dist/
 .DS_Store

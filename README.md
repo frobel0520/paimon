@@ -1,13 +1,20 @@
-# Paimon
+# Paimon — 常去店家
 
-內部使用的模組化日常助理 Web（個人檔案、模組開關、記事、飲食輪盤與飲食紀錄、常去店家營業狀態）。
+收藏常去的飲食店家，隨時查看「現在有沒有開」。資料來源：Google Places API (New)。
+
+- 以店名搜尋 Google 店家並收藏
+- 清單即時顯示 營業中／已打烊／幾點開門（含跨夜時段）、每週營業時間、Google 地圖連結
+- 營業時段快取在本地（SQLite 或瀏覽器 localStorage），「現在是否營業」由前端計算；
+  只有新增店家、按「更新」、或快取超過 `PLACES_REFRESH_DAYS`（預設 7 天）才呼叫 Google，
+  正常使用遠低於免費額度（Text Search Pro 5,000 次/月、Place Details Enterprise 1,000 次/月）
 
 ## 需求
 
 - Python 3.11+（已在 Python 3.14 驗證）
 - Node.js 18+
+- Google Maps API key（啟用 **Places API (New)**）
 
-## 啟動
+## 啟動（本機）
 
 ### 後端
 
@@ -16,6 +23,7 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+copy .env.example .env   # 貼上你的 GOOGLE_MAPS_API_KEY
 .\.venv\Scripts\python -m app.main
 ```
 
@@ -29,95 +37,29 @@ npm install
 npm run dev
 ```
 
-瀏覽器開啟：http://localhost:5173
-
-1. 建立或選擇個人檔案  
-2. 首頁進入「日常記事」「飲食」  
-3. 「模組設定」可開關飲食／記事（遊戲、工作為 Sprint 2）
+瀏覽器開啟 http://localhost:5173，直接進入店家頁。
 
 ## API
 
-- `GET /api/health` — 健康檢查  
-- `GET/POST /api/users` — 個人檔案  
-- `GET/PATCH /api/users/{id}/modules` — 模組開關  
-- `GET/POST/PATCH/DELETE /api/users/{id}/notes` — 記事  
-- `GET/POST/DELETE /api/users/{id}/diet/...` — 輪盤與飲食紀錄  
-- `GET/POST/DELETE /api/users/{id}/places` — 常去店家收藏  
-- `GET /api/users/{id}/places/search?q=` — 以店名搜尋 Google 店家  
-- `POST /api/users/{id}/places/{fav_id}/refresh` — 重新抓取店家資料  
+- `GET /api/health` — 健康檢查
+- `GET /api/places` — 收藏清單（含快取的營業時段）
+- `GET /api/places/search?q=` — 以店名搜尋 Google 店家
+- `POST /api/places` — 加入收藏（body: `{place_id}`）
+- `POST /api/places/{id}/refresh` — 重新抓取店家資料
+- `DELETE /api/places/{id}` — 移除收藏
 
-資料庫：`backend/paimon.db`（SQLite，自動建立）
+資料庫：`backend/paimon.db`（SQLite，自動建立）。
+舊版（多模組時代）的資料表會在第一次啟動時自動移除，
+整個舊 DB 會先備份成 `backend/paimon.db.bak`，店家收藏自動搬移。
 
-## 常去店家（Google Places）
+## GitHub Pages（localStorage）模式
 
-收藏常去的飲食店家，隨時查看「現在有沒有開」。
+僅部署前端、無後端，資料與 API key 存在瀏覽器 localStorage：
 
-- 資料來源：Google Places API (New)。Text Search 搜店（Pro SKU，每月免費 5,000 次）、
-  Place Details 抓營業時間（Enterprise SKU，每月免費 1,000 次）。
-- 營業時段快取在 DB，「現在是否營業」由前端以快取時段即時計算，
-  只有新增店家、按「更新」、或快取超過 `PLACES_REFRESH_DAYS`（預設 7 天）才呼叫 Google，
-  正常使用遠低於免費額度。
-
-### 設定 API key（本機後端模式）
-
-1. 在 Google Cloud 建立 API key（啟用 **Places API (New)**）
-2. 複製 `backend/.env.example` 為 `backend/.env`，貼上 key（`.env` 已被 gitignore）
-3. 重新啟動後端
-
-### GitHub Pages（localStorage）模式
-
-沒有後端可代打 Google，改由瀏覽器直連 Places API：
-第一次進「常去店家」頁時貼上 API key，只會存在該瀏覽器的 localStorage。
-此模式 key 會暴露於瀏覽器，請務必在 Google Cloud 對 key 設定
-「網站限制（HTTP referrer）」與「僅限 Places API (New)」。
-
-## Sprint 1 驗收對照
-
-- [x] 個人檔案選擇／建立，重新整理後保留（localStorage）  
-- [x] 模組開關（飲食、記事；遊戲／工作標示 Sprint 2）  
-- [x] 記事 CRUD、篩選  
-- [x] 食物／飲料輪盤自訂與轉動  
-- [x] 飲食紀錄列表  
-
-## 技術棧
-
-- 後端：Flask + SQLAlchemy + SQLite（本機開發用，相容 Python 3.14）  
-- 前端：React + TypeScript + Vite  
-- **GitHub Pages**：僅部署前端，資料存於瀏覽器 `localStorage`（無需後端）
-
----
-
-## 部署到 GitHub Pages
-
-與「蘑菇戰情室」相同，使用 GitHub Actions 自動發布靜態站點。
-
-### 第一次設定
-
-1. 在 GitHub 建立 repository（建議名稱 **`paimon`**，網址會是 `https://<使用者>.github.io/paimon/`）
-2. 將本專案 push 到 `main` 分支：
-
-```powershell
-cd C:\Users\ytwei\Projects\paimon
-git init
-git add .
-git commit -m "初始版本：Paimon Sprint 1"
-git branch -M main
-git remote add origin https://github.com/<你的帳號>/paimon.git
-git push -u origin main
-```
-
-3. GitHub repo → **Settings → Pages → Build and deployment**
-   - Source：**GitHub Actions**
-4. push 後 Actions 會執行 `.github/workflows/deploy-pages.yml`，約 1～2 分鐘完成
-
-### 運作方式
-
-| 環境 | 資料儲存 |
-|------|----------|
-| 本機 `npm run dev` + 後端 | SQLite（`backend/paimon.db`） |
-| GitHub Pages | 瀏覽器 `localStorage`（每台裝置／瀏覽器各自一份） |
-
-> 若 repo 名稱不是 `paimon`，workflow 會自動用 `/你的-repo-名稱/` 作為路徑，無需手動改檔。
+- push 到 `main` 後 GitHub Actions 自動部署（Settings → Pages → Source: GitHub Actions）
+- 第一次進頁面時貼上 API key。此模式 key 會暴露於瀏覽器，
+  請務必在 Google Cloud 對該 key 設定「網站限制」（如 `https://<帳號>.github.io/*`，
+  **`/*` 結尾必要**）與「僅限 Places API (New)」，並與後端用的 key 分開兩把
 
 ### 本機預覽 Pages 建置
 
@@ -129,4 +71,7 @@ npm run build
 npx serve dist
 ```
 
-開啟終端顯示的網址（路徑需含 `/paimon/`）。
+## 技術棧
+
+- 後端：Flask + SQLAlchemy + SQLite
+- 前端：React + TypeScript + Vite

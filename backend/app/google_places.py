@@ -10,7 +10,7 @@
 import requests
 
 from app.config import GOOGLE_MAPS_API_KEY
-from app.services import ApiError
+from app.errors import ApiError
 
 _BASE = "https://places.googleapis.com/v1"
 _SEARCH_FIELD_MASK = "places.id,places.displayName,places.formattedAddress"

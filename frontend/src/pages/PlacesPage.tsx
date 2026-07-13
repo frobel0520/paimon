@@ -281,16 +281,18 @@ export default function PlacesPage() {
           {data.places.length > 0 && <span className="sub"> （共 {data.places.length} 家）</span>}
         </h2>
         {data.places.length === 0 && <p className="sub">尚未收藏任何店家，先在上方搜尋加入吧</p>}
-        {pagePlaces.map((p) => (
-          <PlaceRow
-            key={p.id}
-            place={p}
-            now={now}
-            refreshing={refreshingIds.has(p.id)}
-            onRefresh={() => refresh(p)}
-            onDelete={() => remove(p)}
-          />
-        ))}
+        <div className="place-grid">
+          {pagePlaces.map((p) => (
+            <PlaceRow
+              key={p.id}
+              place={p}
+              now={now}
+              refreshing={refreshingIds.has(p.id)}
+              onRefresh={() => refresh(p)}
+              onDelete={() => remove(p)}
+            />
+          ))}
+        </div>
         {totalPages > 1 && (
           <div className="pager">
             <button

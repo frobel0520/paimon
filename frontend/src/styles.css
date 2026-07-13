@@ -36,7 +36,7 @@ textarea {
 }
 
 .app-shell {
-  max-width: 640px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 1rem 1rem 3rem;
   min-height: 100vh;
@@ -166,16 +166,22 @@ input[type="text"] {
   color: var(--muted);
 }
 
+/* 固定兩欄（5×2），手機上也維持左右各半 */
+.place-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
 .place-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--surface2);
-}
-
-.place-item:last-child {
-  border-bottom: none;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid var(--surface2);
+  border-radius: var(--radius);
+  min-width: 0;
 }
 
 .place-main {
